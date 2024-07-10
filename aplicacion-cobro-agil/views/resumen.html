@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resumen de Ventas</title>
+</head>
+<body>
+    <h1>Resumen de Ventas por Día</h1>
+    <form id="resumenForm">
+        <label for="date">Fecha:</label>
+        <input type="date" id="date" name="date" required><br><br>
+        <button type="submit">Consultar</button>
+    </form>
+    <h2>Ventas</h2>
+    <ul id="salesList"></ul>
+    <h2>Total de Ventas: $<span id="totalVentas">0</span></h2>
+
+    <script>
+        document.getElementById('resumenForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const date = document.getElementById('date').value;
+            const response = await fetch(`/sales?date=${date}`);
+            const sales = await response.json();
+            const salesList = document.getElementById('salesList');
+            const totalVentas = document.getElementById('totalVentas');
+
+            salesList.innerHTML = '';
+            let total = 0;
+
+            sales.forEach(sale => {
+                const li = document.createElement('li');
+                li.textContent = `${sale.productId.description} - Cantidad: ${sale.quantity} - Total: $${sale.quantity * sale.price}`;
+                salesList.appendChild(li);
+                total += sale.quantity * sale.price;
+            });
+
+            totalVentas.textContent = total;
+        });
+    </script>
+</body>
+</html>

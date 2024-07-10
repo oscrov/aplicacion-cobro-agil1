@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Cobro</title>
+</head>
+<body>
+    <h1>Formulario de Cobro</h1>
+    <form id="cobroForm">
+        <label for="product">Producto:</label>
+        <select id="product" name="product">
+            <!-- Opciones de productos se llenarán dinámicamente -->
+        </select><br><br>
+        <label for="quantity">Cantidad:</label>
+        <input type="number" id="quantity" name="quantity" value="1" min="1" required><br><br>
+        <button type="submit">Agregar</button>
+    </form>
+    <h2>Lista de Productos</h2>
+    <ul id="productList"></ul>
+    <h2>Total a Pagar: $<span id="total">0</span></h2>
+    <button id="pagarButton">Pagar</button>
+
+    <script>
+        // Cargar productos desde el servidor
+        async function loadProducts() {
+            const response = await fetch('/products');
+            const products = await response.json();
+            const productSelect = document.getElementById('product');
+            products.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product._id;
+                option.text = product.description;
+                option.dataset.price = product.price; // Asegurarse de incluir el precio
+                productSelect.appendChild(option);
+            });
+        }
+
+        // Actualizar la lista de productos y el total
+        let total = 0;
+        let saleItems = [];
+        const productList = document.getElementById('productList');
+        const totalSpan = document.getElementById('total');
+
+        document.getElementById('cobroForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const productSelect = document.getElementById('product');
+            const quantity = document.getElementById('quantity').value;
+            const selectedProduct = productSelect.options[productSelect.selectedIndex];
+            const productId = selectedProduct.value;
+            const productDescription = selectedProduct.text;
+            const productPrice = selectedProduct.dataset.price;
+
+            const li = document.createElement('li');
+            li.textContent = `${productDescription} - Cantidad: ${quantity} - Total: $${quantity * productPrice}`;
+            productList.appendChild(li);
+
+            total += quantity * productPrice;
+            totalSpan.textContent = total;
+
+            saleItems.push({ productId, quantity, price: productPrice });
+        });
+
+        document.getElementById('pagarButton').addEventListener('click', async function() {
+            for (let item of saleItems) {
+                await fetch('/sales/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(item)
+                });
+            }
+            alert('Pago realizado. Total: $' + total);
+            productList.innerHTML = '';
+            total = 0;
+            totalSpan.textContent = total;
+            saleItems = [];
+        });
+
+        loadProducts();
+    </script>
+</body>
+</html>
